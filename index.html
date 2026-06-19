@@ -799,9 +799,11 @@
    * -------------------------------------------------------------- */
 
   .closing {
-    grid-template-rows: 1fr;
-    align-items: center;
-    justify-content: center;
+    grid-template-rows: auto 1fr;
+    align-items: start;
+  }
+  .closing .handoff {
+    align-self: center;
   }
   .closing .credits {
     display: flex;
@@ -1318,7 +1320,7 @@
         </div>
       </div>
       <div class="cover__lede">
-        <span class="kicker">For every clinician at the bedside</span>
+        <span class="kicker">Overview</span>
         <h1 class="cover__title">Tatva<br><em>Pendant.</em></h1>
         <p class="cover__sub">An in-house, context-aware capture stack that lets any clinician speak the consultation and walk away with a finished EMR note.</p>
       </div>
@@ -1334,7 +1336,7 @@
 
     <!-- 02 — The tech -->
     <section class="slide">
-      <span class="kicker">What we built · The stack behind the pendant</span>
+      <span class="kicker">The stack</span>
       <h2 class="display">An <em>in-house,</em> context-aware<br>capture loop.</h2>
       <p class="lead">The pendant is the smallest part of the story. Everything that gives the product its value is software we own, end to end.</p>
       <div class="pipeline">
@@ -1348,7 +1350,7 @@
 
     <!-- 03 — One loop, every clinician -->
     <section class="slide">
-      <span class="kicker">One pipeline · Every clinician</span>
+      <span class="kicker">The pipeline</span>
       <h2 class="display">Same loop for<br><em>every room.</em></h2>
       <p class="lead">The system doesn't care which role you play. It identifies the clinician, the encounter, and the right place in the EMR. The clinician doesn't think about OPD versus IPD &mdash; that is the system's job.</p>
       <div class="workflow">
@@ -1361,7 +1363,7 @@
 
     <!-- 04 — Device is a model -->
     <section class="slide">
-      <span class="kicker">Important · The pendant is a model</span>
+      <span class="kicker">Device-agnostic</span>
       <h2 class="display">The <em>hardware</em> is interchangeable.<br>The tech is not.</h2>
       <div class="agnostic">
         <div class="stack">
@@ -1403,9 +1405,9 @@
 
     <!-- 05 — Handoff to the light prototype -->
     <section class="slide closing">
+      <span class="kicker">Demo</span>
       <div class="handoff">
         <div class="handoff__copy">
-          <span class="kicker">Time to see it</span>
           <h2 class="display">Let's start with an<br><em>actual doctor scenario.</em></h2>
           <p class="lead">After IPD Insider launched, the flow worked. The dependency that kept showing up was the screen &mdash; a computer on wheels that isn't always accessible, an iPad that ends up between the clinician and the patient. None of those are blockers. They pointed to a use case any clean capture device &mdash; pendant, lapel mic, even a phone &mdash; can quietly solve. Let's see what that feels like.</p>
         </div>
