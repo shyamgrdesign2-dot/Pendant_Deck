@@ -141,10 +141,10 @@
   .slide {
     position: absolute;
     inset: 0;
-    padding: 72px 72px 44px;
+    padding: 80px 80px 56px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
     opacity: 0;
     pointer-events: none;
     transform: translateY(18px);
@@ -799,7 +799,9 @@
    * -------------------------------------------------------------- */
 
   .closing {
-    grid-template-rows: 1fr auto;
+    grid-template-rows: 1fr;
+    align-items: center;
+    justify-content: center;
   }
   .closing .credits {
     display: flex;
@@ -1369,14 +1371,12 @@
     <section class="slide">
       <span class="kicker">Important · The pendant is a model</span>
       <h2 class="display">The <em>hardware</em> is interchangeable.<br>The tech is not.</h2>
-      <p class="lead">We picked this pendant because it's a clean, unobtrusive way to capture ambient audio at the bedside. That is the only reason. Everything that gives the product its value lives behind it, in software we built.</p>
       <div class="agnostic">
         <div class="stack">
           <div class="row"><div class="glyph">◦</div><p>Built in-house: <em>ASR pipeline,</em> context engine, chunker.</p></div>
           <div class="row"><div class="glyph">◦</div><p>Built in-house: <em>EMR integration</em> and the clinician-facing UX.</p></div>
           <div class="row"><div class="glyph">◦</div><p>Plug-in: <em>any</em> capture device with clean ambient audio.</p></div>
           <div class="row"><div class="glyph">◦</div><p>Plug-in: <em>even a mobile</em> in a coat pocket, if it picks up the room.</p></div>
-          <div class="pull" style="margin-top:24px;">"If a better mic walks in tomorrow, we adopt it the same day."</div>
         </div>
         <div class="pendant-stage pendant-stage--lg">
           <svg class="pendant-art" viewBox="0 0 160 300" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
@@ -1411,9 +1411,9 @@
 
     <!-- 05 — Handoff to the light prototype -->
     <section class="slide closing">
-      <span class="kicker">Time to see it</span>
       <div class="handoff">
         <div class="handoff__copy">
+          <span class="kicker">Time to see it</span>
           <h2 class="display">Let's start with an<br><em>actual doctor scenario.</em></h2>
           <p class="lead">After IPD Insider launched, the flow worked. The dependency that kept showing up was the screen &mdash; a computer on wheels that isn't always accessible, an iPad that ends up between the clinician and the patient. None of those are blockers. They pointed to a use case any clean capture device &mdash; pendant, lapel mic, even a phone &mdash; can quietly solve. Let's see what that feels like.</p>
         </div>
