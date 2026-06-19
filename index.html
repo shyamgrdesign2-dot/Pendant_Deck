@@ -141,10 +141,10 @@
   .slide {
     position: absolute;
     inset: 0;
-    padding: 96px 96px;
+    padding: 72px 72px 44px;
     display: flex;
     flex-direction: column;
-    gap: 28px;
+    gap: 16px;
     opacity: 0;
     pointer-events: none;
     transform: translateY(18px);
@@ -256,12 +256,12 @@
     font-style: italic;
     font-weight: 360;
     font-variation-settings: "opsz" 144, "wght" 360;
-    font-size: clamp(28px, 3.4vw, 56px);
+    font-size: clamp(18px, 2.4vw, 36px);
     line-height: 1.12;
     color: var(--gold);
     letter-spacing: -0.01em;
     border-left: 1px solid var(--rule);
-    padding-left: 28px;
+    padding-left: 22px;
     max-width: 22ch;
   }
 
@@ -758,22 +758,22 @@
 
   .agnostic {
     display: grid;
-    grid-template-columns: 1.1fr 0.9fr;
-    gap: 96px;
+    grid-template-columns: 1.1fr 0.8fr;
+    gap: 36px;
     align-items: center;
-    margin-top: 16px;
+    margin-top: 8px;
   }
   .agnostic .stack {
     display: grid;
-    gap: 18px;
+    gap: 6px;
   }
   .agnostic .stack .row {
     display: grid;
     grid-template-columns: 24px 1fr;
-    gap: 18px;
+    gap: 14px;
     align-items: center;
     border-bottom: 1px solid var(--rule);
-    padding: 14px 0;
+    padding: 10px 0;
   }
   .agnostic .stack .row .glyph {
     width: 24px;
@@ -788,7 +788,7 @@
   .agnostic .stack .row p {
     margin: 0;
     color: var(--cream);
-    font-size: 20px;
+    font-size: 17px;
     font-family: var(--display);
     font-weight: 400;
   }
@@ -922,14 +922,14 @@
   .pendant-art__glow-inner { animation: pendant-glow-inner 2.4s ease-in-out infinite; }
 
   .pendant-stage--xs { width: 100%; height: 100%; }
-  .pendant-stage--md { width: 100%; max-width: 320px; aspect-ratio: 160 / 300; margin: 0 auto; }
-  .pendant-stage--lg { width: 100%; max-width: 380px; aspect-ratio: 160 / 300; margin: 0 auto; }
+  .pendant-stage--md { width: 100%; max-width: 200px; aspect-ratio: 160 / 300; margin: 0 auto; max-height: 40vh; }
+  .pendant-stage--lg { width: 100%; max-width: 200px; aspect-ratio: 160 / 300; margin: 0 auto; max-height: 36vh; }
 
   .cover .cover__pendant {
     position: absolute;
     right: 6%;
     top: 50%;
-    width: clamp(220px, 22vw, 320px);
+    width: clamp(160px, 18vw, 260px);
     aspect-ratio: 160 / 300;
     z-index: 5;
     opacity: 0;
@@ -1179,7 +1179,7 @@
   }
 
   @media (max-width: 1100px) {
-    .slide { padding: 72px 56px; }
+    .slide { padding: 72px 56px; gap: 16px; }
     .grid-2 { grid-template-columns: 1fr; gap: 40px; }
     .scene-objects { grid-template-columns: 1fr; }
     .shift { grid-template-columns: repeat(2, 1fr); }
@@ -1188,9 +1188,93 @@
     .pipeline::before { display: none; }
     .routing { grid-template-columns: 1fr; }
     .workflow { grid-template-columns: 1fr 1fr; }
-    .ux-grid, .agnostic { grid-template-columns: 1fr; gap: 40px; }
+    .ux-grid { grid-template-columns: 1fr; gap: 40px; }
+    .agnostic { gap: 32px; }
     .pendant-mock { max-width: 280px; margin: 0 auto; }
     .rail, .foot { padding-left: 28px; padding-right: 28px; }
+    .cover .cover__pendant { width: clamp(140px, 18vw, 240px); }
+    .pendant-stage--lg { max-width: 240px; }
+    .pendant-stage--md { max-width: 200px; }
+  }
+
+  @media (max-height: 800px) {
+    .slide { padding-top: 64px; padding-bottom: 48px; gap: 12px; }
+    h1.display { font-size: clamp(48px, 7vw, 100px); }
+    h2.display { font-size: clamp(32px, 5vw, 72px); }
+    .lead { font-size: clamp(14px, 1.3vw, 20px); }
+    .cover { padding-top: 64px; padding-bottom: 48px; }
+    .cover__title { font-size: clamp(64px, 12vw, 160px); }
+    .cover__sub { font-size: clamp(14px, 1.3vw, 20px); margin-top: 16px; }
+    .cover .cover__pendant { width: clamp(120px, 16vw, 200px); }
+    .pendant-stage--lg { max-width: 180px; }
+    .pendant-stage--md { max-width: 160px; }
+    .agnostic { grid-template-columns: 1.1fr 0.9fr; gap: 40px; margin-top: 8px; }
+    .agnostic .stack { gap: 8px; }
+    .agnostic .stack .row { padding: 8px 0; }
+    .agnostic .stack .row p { font-size: 16px; }
+    .pull { font-size: clamp(20px, 2.6vw, 36px); padding-left: 18px; }
+    .pipeline .ring { width: 48px; height: 48px; font-size: 10px; }
+    .pipeline h5 { font-size: 18px; }
+    .pipeline p { font-size: 13px; }
+    .pipeline { gap: 10px; }
+    .shift .col { padding: 16px 6px 16px 0; gap: 6px; }
+    .shift .col .name { font-size: 20px; }
+    .entry-list .what { font-size: 22px; }
+    .entry-list li { padding: 14px 0; gap: 16px; }
+    .routing .col { padding: 22px; gap: 12px; }
+    .routing .col .name { font-size: 32px; }
+    .workflow .step h6 { font-size: 22px; }
+    .workflow .step p { font-size: 13px; }
+    .closing .credits .col p { font-size: 14px; }
+    .handoff__copy { gap: 14px; }
+    .cover__num { font-size: clamp(40px, 4vw, 64px); }
+    .foot__track { margin-bottom: 4px; }
+  }
+
+  @media (max-height: 650px) {
+    .slide { padding: 48px 40px; gap: 8px; }
+    h1.display { font-size: clamp(36px, 6vw, 72px); }
+    h2.display { font-size: clamp(26px, 4vw, 52px); }
+    .lead { font-size: clamp(12px, 1.2vw, 16px); max-width: 54ch; }
+    .cover { padding-top: 48px; padding-bottom: 36px; }
+    .cover__title { font-size: clamp(48px, 10vw, 120px); }
+    .cover__sub { font-size: clamp(12px, 1.2vw, 16px); margin-top: 10px; }
+    .cover .cover__pendant { width: clamp(100px, 14vw, 160px); }
+    .pendant-stage--lg { max-width: 130px; }
+    .pendant-stage--md { max-width: 110px; }
+    .agnostic { grid-template-columns: 1.2fr 0.8fr; gap: 24px; margin-top: 4px; }
+    .agnostic .stack { gap: 4px; }
+    .agnostic .stack .row { padding: 6px 0; }
+    .agnostic .stack .row p { font-size: 14px; }
+    .pull { font-size: clamp(16px, 2.2vw, 28px); padding-left: 14px; margin-top: 8px !important; }
+    .kicker { font-size: 10px; }
+    .pipeline .ring { width: 36px; height: 36px; font-size: 9px; }
+    .pipeline h5 { font-size: 15px; }
+    .pipeline p { font-size: 11px; max-width: 18ch; }
+    .pipeline { gap: 8px; margin-top: 6px; }
+    .pipeline::before { top: 18px; }
+    .shift .col { padding: 10px 4px 10px 0; }
+    .shift .col .name { font-size: 16px; }
+    .shift .col .ndev { font-size: 11px; }
+    .entry-list .what { font-size: 18px; }
+    .entry-list li { padding: 10px 0; gap: 12px; }
+    .entry-list .ix { font-size: 9px; }
+    .entry-list .note { font-size: 11px; }
+    .routing .col { padding: 16px; gap: 8px; }
+    .routing .col .name { font-size: 24px; }
+    .routing .col li { font-size: 12px; }
+    .workflow { gap: 12px; }
+    .workflow .step { gap: 6px; }
+    .workflow .step h6 { font-size: 18px; }
+    .workflow .step p { font-size: 11px; }
+    .ux-rule .body h6 { font-size: 20px; }
+    .ux-rule .body p { font-size: 12px; }
+    .closing .credits .col p { font-size: 12px; }
+    .handoff__copy { gap: 10px; }
+    .cover__num { font-size: clamp(32px, 3.5vw, 48px); }
+    .rail { height: 40px; padding-top: 12px; font-size: 9px; }
+    .foot { padding-bottom: 12px; font-size: 9px; }
+    .foot__hint kbd { font-size: 8px; padding: 1px 4px; }
   }
 </style>
 </head>
