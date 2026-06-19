@@ -615,7 +615,7 @@
   .workflow {
     margin-top: 8px;
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 20px;
   }
   .workflow .step {
@@ -1354,10 +1354,9 @@
       <h2 class="display">Same loop for<br><em>every room.</em></h2>
       <p class="lead">The system doesn't care which role you play. It identifies the clinician, the encounter, and the right place in the EMR. The clinician doesn't think about OPD versus IPD &mdash; that is the system's job.</p>
       <div class="workflow">
-        <div class="step"><div class="num">01 · Doctor</div><h6>OPD consult or <em>IPD round.</em></h6><p>Encounter resolved against the schedule, the bed map, and the patient name. Note lands on the active episode.</p></div>
-        <div class="step"><div class="num">02 · Nurse</div><h6>Intake, observations, bedside checks.</h6><p>Nursing entry routed to the right admission, ready for the next clinician to read.</p></div>
-        <div class="step"><div class="num">03 · Bedside team</div><h6>Rounds, handovers, debriefs.</h6><p>Multi-speaker captures attributed correctly, chunked into the right sections of the record.</p></div>
-        <div class="step"><div class="num">04 · Anyone, really</div><h6><em>One pipeline.</em> Every encounter.</h6><p>The same in-house stack works wherever a clinician speaks and an EMR field needs filling.</p></div>
+        <div class="step"><div class="num">01 · Doctor</div><h6>OPD consult or <em>IPD round.</em></h6><p>OPD consultations, IPD rounds for clinical notes, consultant notes, and OT notes.</p></div>
+        <div class="step"><div class="num">02 · Nurse / MO</div><h6>Intake, observations, bedside checks.</h6><p>Progress notes, admission assessment forms, and routine nursing documentation.</p></div>
+        <div class="step"><div class="num">03 · Anyone, really</div><h6><em>One pipeline.</em> Every encounter.</h6><p>The same in-house stack works wherever a clinician speaks and an EMR field needs filling.</p></div>
       </div>
     </section>
 
@@ -1367,10 +1366,11 @@
       <h2 class="display">The <em>hardware</em> is interchangeable.<br>The tech is not.</h2>
       <div class="agnostic">
         <div class="stack">
-          <div class="row"><div class="glyph">◦</div><p>Built in-house: <em>ASR pipeline,</em> context engine, chunker.</p></div>
+          <div class="row"><div class="glyph">◦</div><p>Built in-house: context engine, chunker.</p></div>
           <div class="row"><div class="glyph">◦</div><p>Built in-house: <em>EMR integration</em> and the clinician-facing UX.</p></div>
           <div class="row"><div class="glyph">◦</div><p>Plug-in: <em>any</em> capture device with clean ambient audio.</p></div>
           <div class="row"><div class="glyph">◦</div><p>Plug-in: <em>even a mobile</em> in a coat pocket, if it picks up the room.</p></div>
+          <div class="pull" style="margin-top:24px;">"If a better mic walks in tomorrow, we adopt it the same day."</div>
         </div>
         <div class="pendant-stage pendant-stage--lg">
           <svg class="pendant-art" viewBox="0 0 160 300" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
