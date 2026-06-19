@@ -1342,8 +1342,8 @@
       <div class="pipeline">
         <div class="node"><div class="ring">01</div><h5>Capture</h5><p>Picks up ambient audio from any clean mic at the bedside.</p></div>
         <div class="node hot"><div class="ring">02</div><h5>Understand</h5><p>In-house AI that understands clinical speech, abbreviations, and medical terms out of the box.</p></div>
-        <div class="node hot"><div class="ring">03</div><h5>Resolve</h5><p>Lines up every primary key from the encounter &mdash; doctor, schedule, appointments, patient name, ward, bed, area, and the spoken context itself.</p></div>
-        <div class="node hot"><div class="ring">04</div><h5>Structure</h5><p>Chunks the audio into the right buckets &mdash; OPD, IPD, observations, plans.</p></div>
+        <div class="node hot"><div class="ring">03</div><h5>Resolve</h5><p>Identifies primary keys from the conversation: doctor, patient, schedule, ward, bed, and the full encounter context.</p></div>
+        <div class="node hot"><div class="ring">04</div><h5>Structure</h5><p>Chunks each conversation segment by patient and encounter type: OPD consult, IPD round, observations, plans.</p></div>
         <div class="node"><div class="ring">05</div><h5>Write</h5><p>Copies into the EMR form, ready to save and print.</p></div>
       </div>
     </section>
