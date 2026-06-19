@@ -1,0 +1,1404 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Tatva Pendant — A working prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..900;1,9..144,300..900&family=Manrope:wght@300..700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #0b0913;
+    --ink-2: #14101d;
+    --ink-3: #1b1626;
+    --cream: #f4ead8;
+    --cream-soft: rgba(244, 234, 216, 0.72);
+    --cream-mute: rgba(244, 234, 216, 0.48);
+    --rule: rgba(244, 234, 216, 0.12);
+    --violet: #6c63ff;
+    --violet-deep: #4b4ad5;
+    --ember: #e96b3a;
+    --gold: #e9c46a;
+    --display: "Fraunces", "Georgia", serif;
+    --sans: "Manrope", "Helvetica Neue", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--ink); color: var(--cream); font-family: var(--sans); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  body { overflow: hidden; min-height: 100vh; }
+  a { color: inherit; }
+
+  /* -------------------------------------------------------------- *
+   *  Page chrome — grain, glow corners, top rail, footer           *
+   * -------------------------------------------------------------- */
+
+  .stage {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .stage::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(60% 50% at 10% 0%, rgba(108, 99, 255, 0.22) 0%, transparent 70%),
+      radial-gradient(50% 45% at 100% 100%, rgba(233, 107, 58, 0.16) 0%, transparent 75%),
+      radial-gradient(40% 40% at 100% 0%, rgba(75, 74, 213, 0.18) 0%, transparent 70%);
+    z-index: 0;
+    pointer-events: none;
+  }
+  .stage::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 6;
+    opacity: 0.32;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch' seed='9'/><feColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.55 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+    background-size: 220px 220px;
+  }
+
+  .rail {
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 64px;
+    padding: 22px 48px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 8;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+  }
+  .rail__mark {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 10px;
+    color: var(--cream);
+  }
+  .rail__mark b {
+    font-weight: 600;
+    letter-spacing: 0.22em;
+  }
+  .rail__mark span { color: var(--cream-mute); }
+  .rail__meta { display: inline-flex; gap: 28px; }
+
+  .foot {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    z-index: 8;
+    padding: 0 48px 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 24px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+  }
+  .foot__track {
+    flex: 1;
+    height: 1px;
+    background: var(--rule);
+    position: relative;
+    margin: 0 16px 6px;
+  }
+  .foot__track::after {
+    content: "";
+    position: absolute;
+    left: 0; top: -1px;
+    height: 3px;
+    width: var(--progress, 0%);
+    background: linear-gradient(90deg, var(--violet) 0%, var(--ember) 100%);
+    transition: width 600ms cubic-bezier(.2,.7,.2,1);
+  }
+  .foot__count b { color: var(--cream); }
+  .foot__hint kbd {
+    font-family: var(--mono);
+    font-size: 10px;
+    border: 1px solid var(--rule);
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: var(--cream-soft);
+    margin: 0 2px;
+  }
+
+  /* -------------------------------------------------------------- *
+   *  Slide system                                                   *
+   * -------------------------------------------------------------- */
+
+  .deck { position: absolute; inset: 0; z-index: 4; }
+  .slide {
+    position: absolute;
+    inset: 0;
+    padding: 96px 96px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(18px);
+    transition: opacity 600ms ease, transform 700ms cubic-bezier(.2,.7,.2,1);
+  }
+  .slide > .kicker + * { margin-top: auto; }
+  .slide > *:last-child { margin-bottom: auto; }
+  .cover, .closing {
+    display: grid;
+  }
+  .cover > .kicker + *,
+  .cover > *:last-child,
+  .closing > .kicker + *,
+  .closing > *:last-child {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+  .slide[data-active] {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  .kicker {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .kicker::before {
+    content: "";
+    width: 28px;
+    height: 1px;
+    background: var(--ember);
+  }
+
+  h1.display, h2.display {
+    font-family: var(--display);
+    font-weight: 360;
+    font-variation-settings: "opsz" 144, "wght" 360;
+    letter-spacing: -0.02em;
+    line-height: 0.95;
+    margin: 0;
+    color: var(--cream);
+  }
+  h1.display { font-size: clamp(64px, 9.5vw, 144px); }
+  h2.display { font-size: clamp(46px, 6.6vw, 100px); }
+  .display em {
+    font-style: italic;
+    font-variation-settings: "opsz" 144, "wght" 360, "SOFT" 100;
+    color: var(--gold);
+    letter-spacing: -0.01em;
+  }
+  .display b {
+    font-weight: 600;
+    font-variation-settings: "opsz" 144, "wght" 600;
+  }
+
+  .lead {
+    font-family: var(--sans);
+    font-weight: 300;
+    font-size: clamp(18px, 1.55vw, 25px);
+    line-height: 1.5;
+    color: var(--cream-soft);
+    max-width: 62ch;
+  }
+  .lead b { color: var(--cream); font-weight: 500; }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 96px;
+    align-items: start;
+  }
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 36px;
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--cream-soft);
+    background: rgba(244, 234, 216, 0.02);
+  }
+  .pill .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--ember);
+    box-shadow: 0 0 12px var(--ember);
+  }
+
+  .pull {
+    font-family: var(--display);
+    font-style: italic;
+    font-weight: 360;
+    font-variation-settings: "opsz" 144, "wght" 360;
+    font-size: clamp(28px, 3.4vw, 56px);
+    line-height: 1.12;
+    color: var(--gold);
+    letter-spacing: -0.01em;
+    border-left: 1px solid var(--rule);
+    padding-left: 28px;
+    max-width: 22ch;
+  }
+
+  .meta-line {
+    display: flex;
+    gap: 26px;
+    align-items: center;
+    color: var(--cream-mute);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+  .meta-line span + span::before {
+    content: "·";
+    margin-right: 26px;
+    color: var(--cream-mute);
+  }
+
+  /* -------------------------------------------------------------- *
+   *  Slide 01 — Cover                                               *
+   * -------------------------------------------------------------- */
+
+  .cover {
+    grid-template-rows: 1fr auto;
+    align-items: stretch;
+    padding-top: 96px;
+    padding-bottom: 72px;
+  }
+  .cover__lede { align-self: center; }
+  .cover__title {
+    font-family: var(--display);
+    font-variation-settings: "opsz" 144, "wght" 320;
+    font-weight: 320;
+    font-size: clamp(96px, 16vw, 240px);
+    line-height: 0.86;
+    letter-spacing: -0.03em;
+    margin: 0;
+  }
+  .cover__title em {
+    font-style: italic;
+    color: var(--gold);
+    font-variation-settings: "opsz" 144, "wght" 320, "SOFT" 100;
+  }
+  .cover__sub {
+    margin-top: 28px;
+    max-width: 60ch;
+    font-family: var(--sans);
+    font-weight: 300;
+    font-size: clamp(18px, 1.5vw, 24px);
+    color: var(--cream-soft);
+    line-height: 1.4;
+  }
+  .cover__meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 48px;
+    flex-wrap: wrap;
+  }
+  .cover__num {
+    font-family: var(--display);
+    font-style: italic;
+    font-variation-settings: "opsz" 144, "wght" 360, "SOFT" 100;
+    font-size: clamp(64px, 6vw, 96px);
+    line-height: 1;
+    color: var(--gold);
+    letter-spacing: -0.01em;
+  }
+
+  /* -------------------------------------------------------------- *
+   *  Slide 02 — Problem                                             *
+   * -------------------------------------------------------------- */
+
+  .scene-objects {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+    margin-top: 8px;
+  }
+  .scene-objects .card {
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 28px;
+    background: rgba(244, 234, 216, 0.02);
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: border-color 220ms ease, transform 360ms cubic-bezier(.2,.7,.2,1), background 220ms ease;
+  }
+  .slide[data-active] .scene-objects .card {
+    animation: rise 700ms cubic-bezier(.2,.7,.2,1) both;
+  }
+  .slide[data-active] .scene-objects .card:nth-child(1) { animation-delay: 220ms; }
+  .slide[data-active] .scene-objects .card:nth-child(2) { animation-delay: 360ms; }
+  .slide[data-active] .scene-objects .card:nth-child(3) { animation-delay: 500ms; }
+  .scene-objects .card:hover {
+    border-color: rgba(244, 234, 216, 0.25);
+    background: rgba(244, 234, 216, 0.04);
+  }
+  .scene-objects .card h4 {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: 26px;
+    margin: 0 0 8px;
+    line-height: 1.1;
+    color: var(--cream);
+  }
+  .scene-objects .card p {
+    margin: 0;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--cream-soft);
+  }
+  .scene-objects .card .ix {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    color: var(--cream-mute);
+    text-transform: uppercase;
+  }
+
+  /* -------------------------------------------------------------- *
+   *  Slide 03 — Shift                                               *
+   * -------------------------------------------------------------- */
+
+  .shift {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-top: 16px;
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  .shift .col {
+    padding: 28px 6px 28px 0;
+    border-right: 1px solid var(--rule);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .shift .col:last-child { border-right: 0; }
+  .shift .col .label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.28em;
+    color: var(--cream-mute);
+    text-transform: uppercase;
+  }
+  .shift .col .name {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 26px;
+    line-height: 1.05;
+    color: var(--cream);
+    font-variation-settings: "opsz" 144, "wght" 400, "SOFT" 100;
+  }
+  .shift .col .ndev {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--cream-soft);
+    line-height: 1.4;
+  }
+  .shift .col.us {
+    background: linear-gradient(180deg, rgba(108, 99, 255, 0.16) 0%, transparent 100%);
+  }
+  .shift .col.us .name { color: var(--gold); }
+
+  /* -------------------------------------------------------------- *
+   *  Slide 04 — Entry                                               *
+   * -------------------------------------------------------------- */
+
+  .entry-list {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 0;
+    border-top: 1px solid var(--rule);
+  }
+  .entry-list li {
+    display: grid;
+    grid-template-columns: 96px 1fr auto;
+    align-items: center;
+    gap: 24px;
+    padding: 24px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .entry-list .ix {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    color: var(--cream-mute);
+    text-transform: uppercase;
+  }
+  .entry-list .what {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: 28px;
+    color: var(--cream);
+    letter-spacing: -0.01em;
+  }
+  .entry-list .what em {
+    font-style: italic;
+    color: var(--gold);
+    font-variation-settings: "opsz" 144, "wght" 400, "SOFT" 100;
+  }
+  .entry-list .note {
+    font-size: 14px;
+    color: var(--cream-soft);
+    max-width: 36ch;
+    text-align: right;
+    line-height: 1.45;
+  }
+
+  /* -------------------------------------------------------------- *
+   *  Slide 05 — Pipeline                                            *
+   * -------------------------------------------------------------- */
+
+  .pipeline {
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    position: relative;
+  }
+  .pipeline::before {
+    content: "";
+    position: absolute;
+    top: 36px;
+    left: 5%;
+    right: 5%;
+    height: 1px;
+    background: linear-gradient(90deg, var(--violet), var(--ember));
+    opacity: 0.6;
+  }
+  .pipeline .node {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+  .pipeline .ring {
+    width: 72px;
+    height: 72px;
+    border-radius: 999px;
+    border: 1px solid var(--rule);
+    background: var(--ink-2);
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    color: var(--cream-soft);
+  }
+  .pipeline .node.hot .ring {
+    border-color: rgba(108, 99, 255, 0.55);
+    box-shadow: 0 0 0 6px rgba(108, 99, 255, 0.08);
+    color: var(--gold);
+  }
+  .pipeline h5 {
+    margin: 0;
+    font-family: var(--display);
+    font-size: 24px;
+    font-weight: 400;
+    line-height: 1.15;
+    color: var(--cream);
+  }
+  .pipeline p {
+    margin: 0;
+    font-size: 15px;
+    color: var(--cream-soft);
+    line-height: 1.5;
+    max-width: 24ch;
+  }
+
+  /* -------------------------------------------------------------- *
+   *  Slide 06 — OPD / IPD routing                                   *
+   * -------------------------------------------------------------- */
+
+  .routing {
+    margin-top: 8px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 36px;
+    align-items: stretch;
+  }
+  .routing .col {
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 36px;
+    background: rgba(244, 234, 216, 0.02);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .routing .col h5 {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color: var(--cream-mute);
+  }
+  .routing .col .name {
+    font-family: var(--display);
+    font-style: italic;
+    font-weight: 400;
+    font-size: 44px;
+    line-height: 1;
+    color: var(--cream);
+    font-variation-settings: "opsz" 144, "wght" 400, "SOFT" 100;
+  }
+  .routing .col .name em { color: var(--gold); }
+  .routing .col ul {
+    margin: 6px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 10px;
+  }
+  .routing .col li {
+    display: grid;
+    grid-template-columns: 12px 1fr;
+    gap: 12px;
+    font-size: 15px;
+    color: var(--cream-soft);
+    line-height: 1.45;
+  }
+  .routing .col li::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    margin-top: 8px;
+    background: var(--ember);
+    border-radius: 999px;
+  }
+  .routing .col.ipd li::before { background: var(--violet); }
+
+  /* -------------------------------------------------------------- *
+   *  Slide 07 — Doctor workflow                                     *
+   * -------------------------------------------------------------- */
+
+  .workflow {
+    margin-top: 8px;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+  }
+  .workflow .step {
+    border-top: 1px solid var(--rule);
+    padding: 22px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .workflow .step .num {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    color: var(--cream-mute);
+  }
+  .workflow .step h6 {
+    margin: 0;
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: 30px;
+    color: var(--cream);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+  .workflow .step h6 em { font-style: italic; color: var(--gold); font-variation-settings: "opsz" 144, "wght" 400, "SOFT" 100; }
+  .workflow .step p {
+    margin: 0;
+    color: var(--cream-soft);
+    font-size: 15px;
+    line-height: 1.55;
+    max-width: 30ch;
+  }
+
+  /* -------------------------------------------------------------- *
+   *  Slide 08 — UX                                                  *
+   * -------------------------------------------------------------- */
+
+  .ux-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 80px;
+    align-items: center;
+    margin-top: 24px;
+  }
+  .ux-rules { display: grid; gap: 26px; }
+  .ux-rule {
+    display: grid;
+    grid-template-columns: 60px 1fr;
+    gap: 20px;
+    align-items: baseline;
+  }
+  .ux-rule .ix {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    color: var(--cream-mute);
+    border-top: 1px solid var(--rule);
+    padding-top: 6px;
+  }
+  .ux-rule .body {
+    border-top: 1px solid var(--rule);
+    padding-top: 6px;
+  }
+  .ux-rule .body h6 {
+    margin: 0 0 6px;
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: 26px;
+    line-height: 1.1;
+    color: var(--cream);
+  }
+  .ux-rule .body h6 em { font-style: italic; color: var(--gold); font-variation-settings: "opsz" 144, "wght" 400, "SOFT" 100; }
+  .ux-rule .body p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--cream-soft);
+    line-height: 1.55;
+    max-width: 44ch;
+  }
+
+  .pendant-mock {
+    aspect-ratio: 3 / 5;
+    background:
+      radial-gradient(55% 38% at 50% 36%, rgba(108, 99, 255, 0.35) 0%, transparent 60%),
+      linear-gradient(180deg, #16121f 0%, #07060c 100%);
+    border-radius: 36px;
+    border: 1px solid rgba(244, 234, 216, 0.1);
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 36px 80px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(244, 234, 216, 0.05);
+  }
+  .pendant-mock::before {
+    content: "";
+    position: absolute;
+    inset: 18px;
+    border-radius: 24px;
+    border: 1px solid rgba(244, 234, 216, 0.06);
+  }
+  .pendant-mock .glyph {
+    position: absolute;
+    left: 50%;
+    top: 44%;
+    width: 80px;
+    height: 92px;
+    transform: translate(-50%, -50%);
+  }
+  .pendant-mock .glyph svg { width: 100%; height: 100%; }
+  .pendant-mock .glyph path {
+    stroke: var(--cream);
+    stroke-width: 6;
+    fill: none;
+    stroke-linecap: round;
+    filter: drop-shadow(0 0 8px rgba(108, 99, 255, 0.6));
+  }
+  .pendant-mock .pulse {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .pendant-mock .pulse::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 44%;
+    width: 220px;
+    height: 220px;
+    border-radius: 999px;
+    border: 1px solid rgba(108, 99, 255, 0.35);
+    transform: translate(-50%, -50%) scale(0.6);
+    animation: ringpulse 3.4s ease-out infinite;
+  }
+  @keyframes ringpulse {
+    0% { transform: translate(-50%, -50%) scale(0.55); opacity: 0.7; }
+    100% { transform: translate(-50%, -50%) scale(1.4); opacity: 0; }
+  }
+
+  /* -------------------------------------------------------------- *
+   *  Slide 09 — Device-agnostic                                     *
+   * -------------------------------------------------------------- */
+
+  .agnostic {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 96px;
+    align-items: center;
+    margin-top: 16px;
+  }
+  .agnostic .stack {
+    display: grid;
+    gap: 18px;
+  }
+  .agnostic .stack .row {
+    display: grid;
+    grid-template-columns: 24px 1fr;
+    gap: 18px;
+    align-items: center;
+    border-bottom: 1px solid var(--rule);
+    padding: 14px 0;
+  }
+  .agnostic .stack .row .glyph {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--gold);
+    font-family: var(--mono);
+    font-size: 14px;
+  }
+  .agnostic .stack .row p {
+    margin: 0;
+    color: var(--cream);
+    font-size: 20px;
+    font-family: var(--display);
+    font-weight: 400;
+  }
+  .agnostic .stack .row p em { font-style: italic; color: var(--gold); font-variation-settings: "opsz" 144, "wght" 400, "SOFT" 100; }
+
+  /* -------------------------------------------------------------- *
+   *  Slide 10 — Closing                                             *
+   * -------------------------------------------------------------- */
+
+  .closing {
+    grid-template-rows: 1fr auto;
+  }
+  .closing .credits {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 40px;
+    margin-top: 48px;
+    flex-wrap: wrap;
+  }
+  .closing .credits .col h6 {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    color: var(--cream-mute);
+    margin: 0 0 8px;
+    text-transform: uppercase;
+  }
+  .closing .credits .col p {
+    margin: 0;
+    color: var(--cream-soft);
+    font-size: 16px;
+    line-height: 1.5;
+    max-width: 32ch;
+  }
+
+  /* -------------------------------------------------------------- *
+   *  Motion                                                         *
+   * -------------------------------------------------------------- */
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .slide[data-active] .kicker,
+  .slide[data-active] h1.display,
+  .slide[data-active] h2.display,
+  .slide[data-active] .lead,
+  .slide[data-active] .pull,
+  .slide[data-active] .meta-line,
+  .slide[data-active] .entry-list li,
+  .slide[data-active] .pipeline .node,
+  .slide[data-active] .routing .col,
+  .slide[data-active] .workflow .step,
+  .slide[data-active] .ux-rule,
+  .slide[data-active] .agnostic .stack .row,
+  .slide[data-active] .closing .credits .col {
+    animation: rise 720ms cubic-bezier(.2,.7,.2,1) both;
+  }
+  .slide[data-active] .kicker { animation-delay: 60ms; }
+  .slide[data-active] h1.display, .slide[data-active] h2.display { animation-delay: 180ms; }
+  .slide[data-active] .lead { animation-delay: 320ms; }
+  .slide[data-active] .pull { animation-delay: 480ms; }
+  .slide[data-active] .meta-line { animation-delay: 560ms; }
+  .slide[data-active] .entry-list li:nth-child(1) { animation-delay: 320ms; }
+  .slide[data-active] .entry-list li:nth-child(2) { animation-delay: 420ms; }
+  .slide[data-active] .entry-list li:nth-child(3) { animation-delay: 520ms; }
+  .slide[data-active] .entry-list li:nth-child(4) { animation-delay: 620ms; }
+  .slide[data-active] .entry-list li:nth-child(5) { animation-delay: 720ms; }
+  .slide[data-active] .entry-list li:nth-child(6) { animation-delay: 820ms; }
+  .slide[data-active] .pipeline .node:nth-child(1) { animation-delay: 300ms; }
+  .slide[data-active] .pipeline .node:nth-child(2) { animation-delay: 420ms; }
+  .slide[data-active] .pipeline .node:nth-child(3) { animation-delay: 540ms; }
+  .slide[data-active] .pipeline .node:nth-child(4) { animation-delay: 660ms; }
+  .slide[data-active] .pipeline .node:nth-child(5) { animation-delay: 780ms; }
+  .slide[data-active] .routing .col:nth-child(1) { animation-delay: 320ms; }
+  .slide[data-active] .routing .col:nth-child(2) { animation-delay: 460ms; }
+  .slide[data-active] .workflow .step:nth-child(1) { animation-delay: 280ms; }
+  .slide[data-active] .workflow .step:nth-child(2) { animation-delay: 400ms; }
+  .slide[data-active] .workflow .step:nth-child(3) { animation-delay: 520ms; }
+  .slide[data-active] .workflow .step:nth-child(4) { animation-delay: 640ms; }
+  .slide[data-active] .ux-rule:nth-child(1) { animation-delay: 280ms; }
+  .slide[data-active] .ux-rule:nth-child(2) { animation-delay: 400ms; }
+  .slide[data-active] .ux-rule:nth-child(3) { animation-delay: 520ms; }
+  .slide[data-active] .agnostic .stack .row:nth-child(1) { animation-delay: 280ms; }
+  .slide[data-active] .agnostic .stack .row:nth-child(2) { animation-delay: 380ms; }
+  .slide[data-active] .agnostic .stack .row:nth-child(3) { animation-delay: 480ms; }
+  .slide[data-active] .agnostic .stack .row:nth-child(4) { animation-delay: 580ms; }
+  .slide[data-active] .closing .credits .col:nth-child(1) { animation-delay: 280ms; }
+  .slide[data-active] .closing .credits .col:nth-child(2) { animation-delay: 380ms; }
+  .slide[data-active] .closing .credits .col:nth-child(3) { animation-delay: 480ms; }
+
+  /* -------------------------------------------------------------- *
+   *  Pendant artwork — ported from PendantArtwork.js               *
+   * -------------------------------------------------------------- */
+
+  .pendant-stage {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .pendant-art {
+    position: relative;
+    z-index: 1;
+    height: 100%;
+    width: auto;
+    display: block;
+    filter: drop-shadow(0 28px 48px rgba(0, 0, 0, 0.45));
+    transform-origin: 50% 0;
+    will-change: transform;
+  }
+  .slide[data-active] .pendant-art {
+    animation:
+      pendant-drop 1.2s cubic-bezier(.34, .05, .4, .95) both,
+      pendant-sway 1.6s ease-in-out 1.25s infinite alternate;
+  }
+  @keyframes pendant-drop {
+    0%   { transform: rotate(-16deg); }
+    18%  { transform: rotate(11deg); }
+    36%  { transform: rotate(-7deg); }
+    54%  { transform: rotate(4deg); }
+    72%  { transform: rotate(-2.5deg); }
+    100% { transform: rotate(-2deg); }
+  }
+  @keyframes pendant-sway {
+    0%   { transform: rotate(-2.5deg); }
+    100% { transform: rotate(2.5deg); }
+  }
+  .pendant-art__glow-outer { animation: pendant-glow-outer 2.4s ease-in-out infinite; }
+  .pendant-art__glow-inner { animation: pendant-glow-inner 2.4s ease-in-out infinite; }
+
+  .pendant-stage--xs { width: 100%; height: 100%; }
+  .pendant-stage--md { width: 100%; max-width: 320px; aspect-ratio: 160 / 300; margin: 0 auto; }
+  .pendant-stage--lg { width: 100%; max-width: 380px; aspect-ratio: 160 / 300; margin: 0 auto; }
+
+  .cover .cover__pendant {
+    position: absolute;
+    right: 6%;
+    top: 50%;
+    width: clamp(220px, 22vw, 320px);
+    aspect-ratio: 160 / 300;
+    z-index: 5;
+    opacity: 0;
+    transform: translateY(calc(-50% + 24px));
+    animation: cover-pendant-rise 1100ms cubic-bezier(.2,.7,.2,1) 280ms forwards;
+  }
+  @keyframes cover-pendant-rise {
+    from { opacity: 0; transform: translateY(calc(-50% + 24px)); }
+    to   { opacity: 1; transform: translateY(-50%); }
+  }
+
+  @keyframes pendant-glow-outer {
+    0%, 100% { opacity: 0.45; }
+    50%      { opacity: 1; }
+  }
+  @keyframes pendant-glow-inner {
+    0%, 100% { opacity: 0.4; }
+    50%      { opacity: 0.95; }
+  }
+
+  /* -------------------------------------------------------------- *
+   *  Slide 5 — Handoff with phone mockup                            *
+   * -------------------------------------------------------------- */
+
+  .handoff {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  .handoff__copy { display: flex; flex-direction: column; gap: 22px; align-items: center; }
+  .handoff__copy .credits-inline {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    margin-top: 8px;
+  }
+  .handoff__copy .credits-inline .col h6 {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    color: var(--cream-mute);
+    margin: 0 0 6px;
+    text-transform: uppercase;
+  }
+  .handoff__copy .credits-inline .col p {
+    margin: 0;
+    color: var(--cream-soft);
+    font-size: 14px;
+    line-height: 1.5;
+    max-width: 30ch;
+  }
+
+  .phone-mock {
+    width: 100%;
+    aspect-ratio: 9 / 19.5;
+    background: #08070d;
+    border-radius: 36px;
+    padding: 7px;
+    position: relative;
+    box-shadow:
+      0 40px 80px rgba(0, 0, 0, 0.55),
+      0 0 0 1px rgba(244, 234, 216, 0.08),
+      inset 0 1px 0 rgba(244, 234, 216, 0.06);
+    transform: rotate(-3deg);
+    transition: transform 600ms cubic-bezier(.2,.7,.2,1);
+    margin: 0 auto;
+  }
+  .phone-mock:hover { transform: rotate(0deg); }
+  .phone-mock__notch {
+    position: absolute;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 76px;
+    height: 22px;
+    background: #050309;
+    border-radius: 16px;
+    z-index: 4;
+  }
+  .phone-mock__screen {
+    width: 100%;
+    height: 100%;
+    border-radius: 30px;
+    overflow: hidden;
+    background: #f7f5f0;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .phone-mock__hero {
+    position: relative;
+    background:
+      radial-gradient(70% 60% at 30% 25%, rgba(108, 99, 255, 0.6) 0%, transparent 70%),
+      linear-gradient(165deg, #4b4ad5 0%, #2d2c8a 100%);
+    padding: 42px 16px 22px;
+    border-radius: 0 0 24px 24px;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-align: center;
+  }
+  .phone-mock__brand {
+    position: absolute;
+    top: 16px;
+    left: 14px;
+    font-family: var(--display);
+    font-style: italic;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.95);
+    letter-spacing: -0.01em;
+  }
+  .phone-mock__avatar {
+    position: absolute;
+    top: 12px;
+    right: 14px;
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #fde68a, #e9c46a);
+    color: #1c1c2e;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+  }
+  .phone-mock__pendant {
+    width: 38px;
+    height: 66px;
+    margin: 4px 0 2px;
+  }
+  .phone-mock__pendant svg { width: 100%; height: 100%; display: block; }
+  .phone-mock__head {
+    font-size: 12.5px;
+    font-weight: 600;
+    margin: 0;
+  }
+  .phone-mock__sub {
+    font-size: 9.5px;
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+  }
+  .phone-mock__cta {
+    margin-top: 8px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .phone-mock__stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    padding: 12px 10px 0;
+  }
+  .phone-mock__stat {
+    background: #fff;
+    border-radius: 8px;
+    padding: 8px 7px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .phone-mock__stat .num {
+    font-family: var(--display);
+    font-size: 16px;
+    color: #14101d;
+    font-weight: 600;
+    line-height: 1;
+  }
+  .phone-mock__stat .lab {
+    font-size: 7.5px;
+    color: #6b7280;
+    font-weight: 500;
+  }
+  .phone-mock__list-head {
+    padding: 12px 12px 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 9.5px;
+    color: #14101d;
+    font-weight: 700;
+  }
+  .phone-mock__list-head span:last-child {
+    color: #4b4ad5;
+    font-weight: 600;
+  }
+  .phone-mock__card {
+    margin: 0 10px;
+    background: #fff;
+    border-radius: 3px 12px 12px 3px;
+    border-left: 3px solid #f97316;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .phone-mock__card-tag {
+    font-size: 8px;
+    color: #4b4ad5;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .phone-mock__card-title {
+    font-size: 10px;
+    color: #14101d;
+    font-weight: 700;
+  }
+  .phone-mock__card-status {
+    font-size: 8px;
+    color: #f97316;
+    font-weight: 600;
+  }
+  .phone-mock__nav {
+    margin-top: auto;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 8px 10px 14px;
+    background: rgba(244, 234, 216, 0.95);
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+    font-size: 7.5px;
+    color: #71717a;
+    font-weight: 500;
+  }
+  .phone-mock__nav .active {
+    color: #4b4ad5;
+    font-weight: 700;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+
+  @media (max-width: 1100px) {
+    .slide { padding: 72px 56px; }
+    .grid-2 { grid-template-columns: 1fr; gap: 40px; }
+    .scene-objects { grid-template-columns: 1fr; }
+    .shift { grid-template-columns: repeat(2, 1fr); }
+    .shift .col:nth-child(2) { border-right: 0; }
+    .pipeline { grid-template-columns: repeat(2, 1fr); }
+    .pipeline::before { display: none; }
+    .routing { grid-template-columns: 1fr; }
+    .workflow { grid-template-columns: 1fr 1fr; }
+    .ux-grid, .agnostic { grid-template-columns: 1fr; gap: 40px; }
+    .pendant-mock { max-width: 280px; margin: 0 auto; }
+    .rail, .foot { padding-left: 28px; padding-right: 28px; }
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <header class="rail">
+    <span class="rail__mark"><b>Tatva Pendant</b> <span>/ a working prototype</span></span>
+    <span class="rail__meta">
+      <span>Internal · Draft</span>
+      <span>v0.1</span>
+    </span>
+  </header>
+
+  <main class="deck" id="deck">
+
+    <!-- 01 — Cover -->
+    <section class="slide cover" data-active>
+      <div class="cover__pendant">
+        <div class="pendant-stage pendant-stage--xs">
+          <svg class="pendant-art" viewBox="0 0 160 300" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+            <defs>
+              <linearGradient id="pBody-a" x1="0.2" y1="0" x2="0.8" y2="1"><stop offset="0%" stop-color="#34344a"/><stop offset="22%" stop-color="#1c1c2e"/><stop offset="55%" stop-color="#0d0d18"/><stop offset="80%" stop-color="#08081a"/><stop offset="100%" stop-color="#02020a"/></linearGradient>
+              <linearGradient id="pEdge-a" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.5)"/><stop offset="20%" stop-color="rgba(255,255,255,0.12)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></linearGradient>
+              <linearGradient id="pBevTop-a" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.45)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></linearGradient>
+              <linearGradient id="pBevBot-a" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0)"/><stop offset="100%" stop-color="rgba(255,255,255,0.16)"/></linearGradient>
+              <filter id="pSym-a" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.6"/></filter>
+            </defs>
+            <line x1="80" y1="0" x2="80" y2="70" stroke="rgba(255,255,255,0.55)" stroke-width="1.1"/>
+            <line x1="80" y1="0" x2="80" y2="70" stroke="rgba(255,255,255,0.18)" stroke-width="3"/>
+            <path d="M 70 70 Q 70 62 80 62 Q 90 62 90 70 L 90 86 L 70 86 Z" fill="url(#pBody-a)" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+            <ellipse cx="80" cy="70" rx="7" ry="3.5" fill="rgba(0,0,0,0.55)"/>
+            <ellipse cx="80" cy="70" rx="4.5" ry="2" fill="rgba(255,255,255,0.06)"/>
+            <rect x="32" y="80" width="96" height="208" rx="18" fill="url(#pBody-a)"/>
+            <rect x="32" y="80" width="96" height="208" rx="18" fill="url(#pEdge-a)"/>
+            <rect x="36" y="84" width="88" height="26" rx="14" fill="url(#pBevTop-a)" opacity="0.75"/>
+            <rect x="36" y="254" width="88" height="32" rx="14" fill="url(#pBevBot-a)" opacity="0.6"/>
+            <rect x="32" y="80" width="96" height="208" rx="18" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+            <rect x="34.5" y="90" width="1.5" height="188" rx="0.75" fill="rgba(255,255,255,0.22)" opacity="0.6"/>
+            <rect x="124" y="94" width="1" height="180" rx="0.5" fill="rgba(0,0,0,0.55)" opacity="0.7"/>
+            <line x1="36" y1="248" x2="124" y2="248" stroke="rgba(255,255,255,0.05)" stroke-width="0.6"/>
+            <line x1="36" y1="249" x2="124" y2="249" stroke="rgba(0,0,0,0.4)" stroke-width="0.6"/>
+            <g filter="url(#pSym-a)" opacity="0.95" class="pendant-art__glow-outer"><path d="M 64 204 L 64 180 Q 64 164 80 164 Q 96 164 96 180 L 96 204" stroke="#ddd6fe" stroke-width="7" fill="none" stroke-linecap="round"/></g>
+            <g filter="url(#pSym-a)" opacity="0.85" class="pendant-art__glow-inner"><path d="M 64 204 L 64 180 Q 64 164 80 164 Q 96 164 96 180 L 96 204" stroke="#ffffff" stroke-width="4.5" fill="none" stroke-linecap="round"/></g>
+            <path d="M 64 204 L 64 180 Q 64 164 80 164 Q 96 164 96 180 L 96 204" stroke="#ffffff" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+      <div class="cover__lede">
+        <span class="kicker">For every clinician at the bedside</span>
+        <h1 class="cover__title">Tatva<br><em>Pendant.</em></h1>
+        <p class="cover__sub">An in-house, context-aware capture stack that lets any clinician speak the consultation and walk away with a finished EMR note.</p>
+      </div>
+      <div class="cover__meta">
+        <div class="meta-line">
+          <span>Doctor · Nurse · IPD team</span>
+          <span>Ambient capture</span>
+          <span>Device-agnostic IP</span>
+        </div>
+        <div class="cover__num">01<span style="color:var(--cream-mute)"> / 05</span></div>
+      </div>
+    </section>
+
+    <!-- 02 — The tech -->
+    <section class="slide">
+      <span class="kicker">What we built · The stack behind the pendant</span>
+      <h2 class="display">An <em>in-house,</em> context-aware<br>capture loop.</h2>
+      <p class="lead">The pendant is the smallest part of the story. Everything that gives the product its value is software we own, end to end.</p>
+      <div class="pipeline">
+        <div class="node"><div class="ring">01</div><h5>Capture</h5><p>Picks up ambient audio from any clean mic at the bedside.</p></div>
+        <div class="node hot"><div class="ring">02</div><h5>Understand</h5><p>In-house ASR tuned to clinical audio, accents, abbreviations and meds.</p></div>
+        <div class="node hot"><div class="ring">03</div><h5>Resolve</h5><p>Lines up every primary key from the encounter &mdash; doctor, schedule, appointments, patient name, ward, bed, area, and the spoken context itself.</p></div>
+        <div class="node hot"><div class="ring">04</div><h5>Structure</h5><p>Chunks the audio into the right buckets &mdash; OPD, IPD, observations, plans.</p></div>
+        <div class="node"><div class="ring">05</div><h5>Write</h5><p>Copies into the EMR form, ready to save and print.</p></div>
+      </div>
+    </section>
+
+    <!-- 03 — One loop, every clinician -->
+    <section class="slide">
+      <span class="kicker">One pipeline · Every clinician</span>
+      <h2 class="display">Same loop for<br><em>every room.</em></h2>
+      <p class="lead">The system doesn't care which role you play. It identifies the clinician, the encounter, and the right place in the EMR. The clinician doesn't think about OPD versus IPD &mdash; that is the system's job.</p>
+      <div class="workflow">
+        <div class="step"><div class="num">01 · Doctor</div><h6>OPD consult or <em>IPD round.</em></h6><p>Encounter resolved against the schedule, the bed map, and the patient name. Note lands on the active episode.</p></div>
+        <div class="step"><div class="num">02 · Nurse</div><h6>Intake, observations, bedside checks.</h6><p>Nursing entry routed to the right admission, ready for the next clinician to read.</p></div>
+        <div class="step"><div class="num">03 · Bedside team</div><h6>Rounds, handovers, debriefs.</h6><p>Multi-speaker captures attributed correctly, chunked into the right sections of the record.</p></div>
+        <div class="step"><div class="num">04 · Anyone, really</div><h6><em>One pipeline.</em> Every encounter.</h6><p>The same in-house stack works wherever a clinician speaks and an EMR field needs filling.</p></div>
+      </div>
+    </section>
+
+    <!-- 04 — Device is a model -->
+    <section class="slide">
+      <span class="kicker">Important · The pendant is a model</span>
+      <h2 class="display">The <em>hardware</em> is interchangeable.<br>The tech is not.</h2>
+      <p class="lead">We picked this pendant because it's a clean, unobtrusive way to capture ambient audio at the bedside. That is the only reason. Everything that gives the product its value lives behind it, in software we built.</p>
+      <div class="agnostic">
+        <div class="stack">
+          <div class="row"><div class="glyph">◦</div><p>Built in-house: <em>ASR pipeline,</em> context engine, chunker.</p></div>
+          <div class="row"><div class="glyph">◦</div><p>Built in-house: <em>EMR integration</em> and the clinician-facing UX.</p></div>
+          <div class="row"><div class="glyph">◦</div><p>Plug-in: <em>any</em> capture device with clean ambient audio.</p></div>
+          <div class="row"><div class="glyph">◦</div><p>Plug-in: <em>even a mobile</em> in a coat pocket, if it picks up the room.</p></div>
+          <div class="pull" style="margin-top:24px;">"If a better mic walks in tomorrow, we adopt it the same day."</div>
+        </div>
+        <div class="pendant-stage pendant-stage--lg">
+          <svg class="pendant-art" viewBox="0 0 160 300" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+            <defs>
+              <linearGradient id="pBody-c" x1="0.2" y1="0" x2="0.8" y2="1"><stop offset="0%" stop-color="#34344a"/><stop offset="22%" stop-color="#1c1c2e"/><stop offset="55%" stop-color="#0d0d18"/><stop offset="80%" stop-color="#08081a"/><stop offset="100%" stop-color="#02020a"/></linearGradient>
+              <linearGradient id="pEdge-c" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.5)"/><stop offset="20%" stop-color="rgba(255,255,255,0.12)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></linearGradient>
+              <linearGradient id="pBevTop-c" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0.45)"/><stop offset="100%" stop-color="rgba(255,255,255,0)"/></linearGradient>
+              <linearGradient id="pBevBot-c" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(255,255,255,0)"/><stop offset="100%" stop-color="rgba(255,255,255,0.16)"/></linearGradient>
+              <filter id="pSym-c" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.6"/></filter>
+            </defs>
+            <line x1="80" y1="0" x2="80" y2="70" stroke="rgba(255,255,255,0.55)" stroke-width="1.1"/>
+            <line x1="80" y1="0" x2="80" y2="70" stroke="rgba(255,255,255,0.18)" stroke-width="3"/>
+            <path d="M 70 70 Q 70 62 80 62 Q 90 62 90 70 L 90 86 L 70 86 Z" fill="url(#pBody-c)" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+            <ellipse cx="80" cy="70" rx="7" ry="3.5" fill="rgba(0,0,0,0.55)"/>
+            <ellipse cx="80" cy="70" rx="4.5" ry="2" fill="rgba(255,255,255,0.06)"/>
+            <rect x="32" y="80" width="96" height="208" rx="18" fill="url(#pBody-c)"/>
+            <rect x="32" y="80" width="96" height="208" rx="18" fill="url(#pEdge-c)"/>
+            <rect x="36" y="84" width="88" height="26" rx="14" fill="url(#pBevTop-c)" opacity="0.75"/>
+            <rect x="36" y="254" width="88" height="32" rx="14" fill="url(#pBevBot-c)" opacity="0.6"/>
+            <rect x="32" y="80" width="96" height="208" rx="18" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+            <rect x="34.5" y="90" width="1.5" height="188" rx="0.75" fill="rgba(255,255,255,0.22)" opacity="0.6"/>
+            <rect x="124" y="94" width="1" height="180" rx="0.5" fill="rgba(0,0,0,0.55)" opacity="0.7"/>
+            <line x1="36" y1="248" x2="124" y2="248" stroke="rgba(255,255,255,0.05)" stroke-width="0.6"/>
+            <line x1="36" y1="249" x2="124" y2="249" stroke="rgba(0,0,0,0.4)" stroke-width="0.6"/>
+            <g filter="url(#pSym-c)" opacity="0.95" class="pendant-art__glow-outer"><path d="M 64 204 L 64 180 Q 64 164 80 164 Q 96 164 96 180 L 96 204" stroke="#fde68a" stroke-width="7" fill="none" stroke-linecap="round"/></g>
+            <g filter="url(#pSym-c)" opacity="0.85" class="pendant-art__glow-inner"><path d="M 64 204 L 64 180 Q 64 164 80 164 Q 96 164 96 180 L 96 204" stroke="#ffffff" stroke-width="4.5" fill="none" stroke-linecap="round"/></g>
+            <path d="M 64 204 L 64 180 Q 64 164 80 164 Q 96 164 96 180 L 96 204" stroke="#ffffff" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- 05 — Handoff to the light prototype -->
+    <section class="slide closing">
+      <span class="kicker">Time to see it</span>
+      <div class="handoff">
+        <div class="handoff__copy">
+          <h2 class="display">Let's start with an<br><em>actual doctor scenario.</em></h2>
+          <p class="lead">After IPD Insider launched, the flow worked. The dependency that kept showing up was the screen &mdash; a computer on wheels that isn't always accessible, an iPad that ends up between the clinician and the patient. None of those are blockers. They pointed to a use case any clean capture device &mdash; pendant, lapel mic, even a phone &mdash; can quietly solve. Let's see what that feels like.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="foot">
+    <span class="foot__count"><b id="counter">01</b> / 05</span>
+    <div class="foot__track"></div>
+    <span class="foot__hint">Use <kbd>←</kbd> <kbd>→</kbd>, <kbd>space</kbd>, or scroll</span>
+  </footer>
+
+</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const counter = document.getElementById('counter');
+  const track = document.querySelector('.foot__track');
+  let i = 0;
+
+  function go(n) {
+    i = (n + slides.length) % slides.length;
+    slides.forEach((s, ix) => {
+      if (ix === i) s.setAttribute('data-active', '');
+      else s.removeAttribute('data-active');
+    });
+    counter.textContent = String(i + 1).padStart(2, '0');
+    track.style.setProperty('--progress', ((i + 1) / slides.length * 100).toFixed(2) + '%');
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); go(i + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(i - 1); }
+    else if (e.key === 'Home') { go(0); }
+    else if (e.key === 'End') { go(slides.length - 1); }
+  });
+
+  let lastTouchX = null;
+  window.addEventListener('touchstart', (e) => { lastTouchX = e.touches[0].clientX; }, { passive: true });
+  window.addEventListener('touchend', (e) => {
+    if (lastTouchX == null) return;
+    const dx = (e.changedTouches[0].clientX - lastTouchX);
+    if (Math.abs(dx) > 60) go(dx < 0 ? i + 1 : i - 1);
+    lastTouchX = null;
+  });
+
+  // Scroll-to-advance — one slide per gesture
+  let wheelLockUntil = 0;
+  window.addEventListener('wheel', (e) => {
+    const dy = e.deltaY;
+    const dx = e.deltaX;
+    if (Math.abs(dy) < 24 && Math.abs(dx) < 24) return;
+    const now = Date.now();
+    if (now < wheelLockUntil) return;
+    wheelLockUntil = now + 750;
+    const primary = Math.abs(dy) >= Math.abs(dx) ? dy : dx;
+    go(primary > 0 ? i + 1 : i - 1);
+  }, { passive: true });
+
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('a, button, kbd, input, textarea')) return;
+    const w = window.innerWidth;
+    if (e.clientX > w * 0.55) go(i + 1);
+    else if (e.clientX < w * 0.25) go(i - 1);
+  });
+
+  go(0);
+</script>
+</body>
+</html>
